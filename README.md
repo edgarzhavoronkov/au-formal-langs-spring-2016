@@ -19,7 +19,7 @@ Make sure you have Glorious Haskell Compiler, Cabal(package manager), Alex and H
 
 After you check out this repo and change into directory type `cabal configure` and `cabal build`. It should build executables stored in `./dist/build/${TARGET_NAME}`
 
-There are three targets.
+There are three targets.  
 1. main. To run it type `./dist/build/main/main`. Main program takes string - your program and shows AST, if it was successfully built.
 2. testLexer. There are two hardcoded tests for lexer in `tests` folder and `./dist/build/testLexer/testLexer` simply runs them.
 3. testParser. There are also two hardcoded tests for parser in `tests` folder and `./dist/build/testParser/testParser` simply runs them.
