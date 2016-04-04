@@ -21,5 +21,5 @@ After you check out this repo and change into directory type `cabal configure` a
 
 There are three targets.  
 1.  main. To run it type `./dist/build/main/main`. Main program takes string - your program and shows AST, if it was successfully built.  
-2.  testLexer. There are two hardcoded tests for lexer in `tests` folder and `./dist/build/testLexer/testLexer` simply runs them.  
-3.  testParser. There are also two hardcoded tests for parser in `tests` folder and `./dist/build/testParser/testParser` simply runs them.
+2.  testLexer. There are two hardcoded tests for lexer in `test` folder and `./dist/build/testLexer/testLexer` simply runs them.  
+3.  testParser. There are also two hardcoded tests for parser in `test` folder and `./dist/build/testParser/testParser` simply runs them.
