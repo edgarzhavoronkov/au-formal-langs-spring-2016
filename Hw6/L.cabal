@@ -1,0 +1,19 @@
+Name:           L-parser
+Version:        0.2
+Cabal-Version:  >= 1.2
+License:        GPL
+Author:         Edgar Zhavoronkov
+Synopsis:       Simple language parser using Parsec
+Build-Type:     Simple
+
+executable main
+    Main-Is:        Main.hs
+    Other-modules:  Parser, Expr
+    Hs-Source-Dirs: src
+    Build-Depends:  base >= 4, array, parsec
+
+executable testParser
+    Main-Is:        testParser.hs
+    Other-modules:  Parser, Expr
+    Hs-Source-Dirs: src, test
+    Build-Depends:  base >= 4, array, parsec
