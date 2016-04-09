@@ -1,0 +1,25 @@
+Name:           L-parser
+Version:        0.1
+Cabal-Version:  >= 1.2
+License:        GPL
+Author:         Edgar Zhavoronkov
+Synopsis:       Simple language parser using Alex and Happy
+Build-Type:     Simple
+
+executable main
+    Main-Is:        Main.hs
+    Other-modules:  Lexer, Parser, Expr
+    Hs-Source-Dirs: src
+    Build-Depends:  base >= 4, array
+
+executable testLexer
+    Main-Is:        testLexer.hs
+    Other-modules:  Lexer, Parser, Expr
+    Hs-Source-Dirs: src, test
+    Build-Depends:  base >= 4, array
+
+executable testParser
+    Main-Is:        testParser.hs
+    Other-modules:  Lexer, Parser, Expr
+    Hs-Source-Dirs: src, test
+    Build-Depends:  base >= 4, array
