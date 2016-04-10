@@ -31,6 +31,7 @@ languageDef =
                                           , "-"
                                           , "*"
                                           , "/"
+                                          , ":="
                                           , "%"
                                           , "=="
                                           , "!="
@@ -50,24 +51,27 @@ reserved   = Token.reserved   lexer
 reservedOp = Token.reservedOp lexer
 semi       = Token.semi       lexer
 parens     = Token.parens     lexer
-
 integer    = Token.integer    lexer
 whiteSpace = Token.whiteSpace lexer
 
 ifStmt :: Parser Stmt
 ifStmt = do
     reserved "if"
-    condExpr <- expression
+    spaces
+    cond <- expression
     reserved "then"
+    spaces
     action1 <- statement
     reserved "else"
+    spaces
     action2 <- statement
-    return $ IfCond condExpr action1 action2
+    return $ IfCond cond action1 action2
 
 whileStmt :: Parser Stmt
 whileStmt = do
     reserved "while"
     cond <- expression
+    spaces
     reserved "do"
     action <- statement
     return $ WhileLoop cond action
@@ -76,71 +80,62 @@ whileStmt = do
 assignStmt :: Parser Stmt
 assignStmt = do
     var <- expression
+    spaces
     reservedOp ":="
+    spaces
     expr <- expression
     return $ Assign var expr
 
 skipStmt :: Parser Stmt
 skipStmt = do
     reserved "skip"
+    spaces
     return Skip
-
-colonStmt :: Parser Stmt
-colonStmt = do
-    s1 <- statement
-    reserved ";"
-    s2 <- statement
-    return $ Colon s1 s2
 
 readStmt :: Parser Stmt
 readStmt = do
     reserved "read"
+    spaces
     e <- expression
     return $ Read e
 
 writeStmt :: Parser Stmt
 writeStmt = do
     reserved "write"
+    spaces
     e <- expression
     return $ Write e
 
 statement :: Parser Stmt
-statement = skipStmt
-            <|> assignStmt
-            <|> colonStmt
+statement = do
+    ss <- sepBy1 statement' (reserved ";")
+    if length ss == 1
+        then return $ head ss
+        else return $ foldr1 Colon ss
+
+statement' :: Parser Stmt
+statement' = assignStmt
             <|> writeStmt
             <|> readStmt
             <|> whileStmt
             <|> ifStmt
+            <|> skipStmt
 
 expression :: Parser Expr
 expression = buildExpressionParser operators term
 
-term = parens opExpression
-        <|> fmap Var identifier
+term = fmap Var identifier
         <|> fmap Num integer
+        <|> parens expression
 
-opExpression = do
-    e1 <- expression
-    op <- operator
-    e2 <- expression
-    return $ BinOp op e1 e2
+operators = [ [Infix (reservedOp "*"  >> return (BinOp Mul)) AssocLeft,
+              Infix (reservedOp "/"  >> return (BinOp Div)) AssocLeft,
+              Infix (reservedOp "%"  >> return (BinOp Mod)) AssocLeft]
 
-operator = (reservedOp "==" >> return Eq)
-        <|> (reservedOp "!=" >> return Neq)
-        <|> (reservedOp ">" >> return Gt)
-        <|> (reservedOp ">=" >> return Geq)
-        <|> (reservedOp "<" >> return Lt)
-        <|> (reservedOp "<=" >> return Leq)
-        <|> (reservedOp "&&" >> return And)
-        <|> (reservedOp "||" >> return Or)
-        <|> (reservedOp "*" >> return Mul)
-        <|> (reservedOp "/" >> return Div)
-        <|> (reservedOp "%" >> return Mod)
-        <|> (reservedOp "+" >> return Add)
-        <|> (reservedOp "-" >> return Sub)
+            , [Infix (reservedOp "+"  >> return (BinOp Add)) AssocLeft,
+              Infix (reservedOp "-"  >> return (BinOp Sub)) AssocLeft]
 
-operators = [ [Infix (reservedOp "==" >> return (BinOp Eq)) AssocNone,
+            , [Infix (reservedOp "==" >> return (BinOp Eq)) AssocNone,
               Infix (reservedOp "!=" >> return (BinOp Neq)) AssocNone,
               Infix (reservedOp ">"  >> return (BinOp Gt)) AssocNone,
               Infix (reservedOp ">=" >> return (BinOp Geq)) AssocNone,
@@ -148,13 +143,6 @@ operators = [ [Infix (reservedOp "==" >> return (BinOp Eq)) AssocNone,
               Infix (reservedOp "<=" >> return (BinOp Leq)) AssocNone,
               Infix (reservedOp "&&" >> return (BinOp And)) AssocNone,
               Infix (reservedOp "||" >> return (BinOp Or)) AssocNone]
-
-            , [Infix (reservedOp "*"  >> return (BinOp Mul)) AssocLeft,
-              Infix (reservedOp "/"  >> return (BinOp Div)) AssocLeft,
-              Infix (reservedOp "%"  >> return (BinOp Mod)) AssocLeft]
-
-            , [Infix (reservedOp "+"  >> return (BinOp Add)) AssocLeft,
-               Infix (reservedOp "-"  >> return (BinOp Sub)) AssocLeft]
             ]
 
 parser :: Parser Stmt
