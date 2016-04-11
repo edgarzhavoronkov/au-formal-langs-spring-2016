@@ -36,6 +36,8 @@ import Expr
     '<='        { TLeq _            }
     '&&'        { TAnd _            }
     '||'        { TOr _             }
+    '('         { TLeftBracket _    }
+    ')'         { TRightBracket _   }
 
 %nonassoc '&&' '||'
 %nonassoc '==' '!='
@@ -55,6 +57,7 @@ Stmt : skip                                 { Skip }
 
 Expr : VAR                                  { Var $1 }
      | NUM                                  { Num $1 }
+     | '(' Expr ')'                         { $2 }
      | Expr '*' Expr                        { BinOp Mul $1 $3 }
      | Expr '/' Expr                        { BinOp Div $1 $3 }
      | Expr '%' Expr                        { BinOp Mod $1 $3 }

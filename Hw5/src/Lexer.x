@@ -33,6 +33,8 @@ tokens :-
     "<="                                { tok (\p s -> TLeq p) }
     "&&"                                { tok (\p s -> TAnd p) }
     "||"                                { tok (\p s -> TOr p) }
+    "("                                 { tok (\p s -> TLeftBracket p) }
+    ")"                                 { tok (\p s -> TRightBracket p) }
     $alpha[$alpha $digit \_ \']*        { tok (\p s -> TVar p s ) }
 
 {
@@ -63,6 +65,8 @@ data Token = TDo AlexPosn
 			| TAssign AlexPosn
 			| TVar AlexPosn String
 			| TIntLiteral AlexPosn Int
+			| TLeftBracket AlexPosn
+			| TRightBracket AlexPosn
 			| TColon AlexPosn deriving Eq
 
 instance Show Token where
@@ -89,6 +93,8 @@ instance Show Token where
     show (TAssign (AlexPn x y z)) = "Assign(" ++ show z ++ ", " ++ show (z + length ":=" - 1) ++ ")"
     show (TVar (AlexPn x y z) str) = "Var(" ++ show str ++ ", " ++ show z ++ ", " ++ show (z + length str - 1) ++ ")"
     show (TIntLiteral (AlexPn x y z) num) = "IntLit(" ++ show num ++ ", " ++ show z ++ ", " ++ show (z + (length $ show num) - 1) ++ ")"
+    show (TLeftBracket (AlexPn x y z)) = "LeftBracket(" ++ show z ++ ", " ++ show (z + length "(" - 1) ++ ")"
+    show (TRightBracket (AlexPn x y z)) = "RightBracket(" ++ show z ++ ", " ++ show (z + length ")" - 1) ++ ")"
     show (TColon (AlexPn x y z)) = "Colon(" ++ show z ++ ", " ++ show (z + length ";" - 1) ++ ")"
 
 scanTokens = alexScanTokens
