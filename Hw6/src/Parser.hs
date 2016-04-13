@@ -198,7 +198,8 @@ pprint = helper ""
             helper ('\t' : indent) s1
             putStrLn $ ('\n':indent) ++ "else"
             helper ('\t' : indent) s2
---TODO - bugfix
+
+--TODO - normal evaluations
 simplify :: Expr -> Expr
 simplify (Var x) = Var x
 simplify (Num i) = Num i
@@ -218,13 +219,13 @@ simplify (BinOp Sub (Num x) (Num y)) = Num (x - y)
 simplify (BinOp Mul (Num x) (Num y)) = Num (x * y)
 simplify (BinOp Div (Num x) (Num y)) = Num (x `div` y)
 simplify (BinOp Mod (Num x) (Num y)) = Num (x `mod` y)
-simplify (BinOp op e1 e2) = BinOp op (simplify e1) (simplify e2)
+simplify (BinOp op e1 e2) = simplify (BinOp op (simplify e1) (simplify e2))
 
 optimize :: Stmt -> Stmt
 optimize Skip = Skip
 optimize (Colon s1 s2) = Colon (optimize s1) (optimize s2)
-optimize (Assign e1 e2) = Assign e1 (simplify e2)
+optimize (Assign e1 e2) = Assign e1 ((simplify . simplify) e2)
 optimize (Read e) = Read e
-optimize (Write e) = Write (simplify e)
-optimize (WhileLoop e s) = WhileLoop (simplify e) (optimize s)
+optimize (Write e) = Write ((simplify . simplify) e)
+optimize (WhileLoop e s) = WhileLoop ((simplify . simplify) e) (optimize s)
 optimize (IfCond e s1 s2) = IfCond ((simplify . simplify) e) (optimize s1) (optimize s2)
