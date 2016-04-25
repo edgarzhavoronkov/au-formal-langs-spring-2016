@@ -82,6 +82,13 @@ testEval = expected == actual
         expr = "write (1 + 2) * 4 + 30"
         expected = Write (Num 42)
 
+testComplexEval :: Bool
+testComplexEval = expected == actual
+    where
+        actual = optimize $ parseString expr
+        expr = "y := 30 + (x + (4 * 3))"
+        expected = Assign (Var "y") (BinOp Add (Num 42) (Var "x"))
+
 main :: IO ()
 main = do
     putStrLn $ "testSimpleAssignmemnt: " ++ show testSimpleAssignmemnt
@@ -96,3 +103,4 @@ main = do
     putStrLn $ "testDivUnit: " ++ show testDivUnit
     putStrLn $ "testModUnit: " ++ show testModUnit
     putStrLn $ "testEval: " ++ show testEval
+    putStrLn $ "testComplexEval: " ++ show testComplexEval

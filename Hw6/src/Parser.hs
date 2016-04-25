@@ -203,29 +203,56 @@ pprint = helper ""
 simplify :: Expr -> Expr
 simplify (Var x) = Var x
 simplify (Num i) = Num i
-simplify (BinOp Add e (Num 0)) = e
-simplify (BinOp Add (Num 0) e) = e
-simplify (BinOp Sub e (Num 0)) = e
-simplify (BinOp Mul e (Num 1)) = e
-simplify (BinOp Mul (Num 1) e) = e
+--neutral elements under addition
+simplify (BinOp Add e (Num 0)) = simplify e
+simplify (BinOp Add (Num 0) e) = simplify e
+--subtraction
+simplify (BinOp Sub e (Num 0)) = simplify e
+--multiplication
+simplify (BinOp Mul e (Num 1)) = simplify e
+simplify (BinOp Mul (Num 1) e) = simplify e
+--mult by zero
 simplify (BinOp Mul (Num 0) e) = Num 0
 simplify (BinOp Mul e (Num 0)) = Num 0
+--division?
 simplify (BinOp Div (Num 0) e) = Num 0
-simplify (BinOp Div e (Num 1)) = e
+simplify (BinOp Div e (Num 1)) = simplify e
+simplify (BinOp Div e1 e2) | e1 == e2 = Num 1
+--modulo
 simplify (BinOp Mod (Num 0) e) = Num 0
 simplify (BinOp Mod e (Num 1)) = Num 0
+--numeric
 simplify (BinOp Add (Num x) (Num y)) = Num (x + y)
 simplify (BinOp Sub (Num x) (Num y)) = Num (x - y)
 simplify (BinOp Mul (Num x) (Num y)) = Num (x * y)
 simplify (BinOp Div (Num x) (Num y)) = Num (x `div` y)
 simplify (BinOp Mod (Num x) (Num y)) = Num (x `mod` y)
-simplify (BinOp op e1 e2) = simplify (BinOp op (simplify e1) (simplify e2))
+--associativity for addition with little bit of commutativity
+simplify (BinOp Add (Num x) (BinOp Add (Num y) ex)) = BinOp Add (Num (x + y)) (simplify ex)
+simplify (BinOp Add (Num x) (BinOp Add ex (Num y))) = BinOp Add (Num (x + y)) (simplify ex)
+simplify (BinOp Add (BinOp Add (Num x) ex) (Num y)) = BinOp Add (Num (x + y)) (simplify ex)
+simplify (BinOp Add (BinOp Add ex (Num x)) (Num y)) = BinOp Add (Num (x + y)) (simplify ex)
+--associativity for multiplication with little bit of commutativity
+simplify (BinOp Mul (Num x) (BinOp Mul (Num y) ex)) = BinOp Mul (Num (x * y)) (simplify ex)
+simplify (BinOp Mul (Num x) (BinOp Mul ex (Num y))) = BinOp Mul (Num (x * y)) (simplify ex)
+simplify (BinOp Mul (BinOp Mul (Num x) ex) (Num y)) = BinOp Mul (Num (x * y)) (simplify ex)
+simplify (BinOp Mul (BinOp Mul ex (Num x)) (Num y)) = BinOp Mul (Num (x * y)) (simplify ex)
+--distibutivity
+simplify (BinOp Mul (Num x) (BinOp Add e1 e2)) = BinOp Add (BinOp Mul (Num x) (simplify e1)) (BinOp Mul (Num x) (simplify e2))
+--recursion launcher
+simplify (BinOp op e1 e2) = BinOp op (simplify e1) (simplify e2)
+--
+totalSimplify :: Expr -> Expr
+totalSimplify expr = helper expr (Num 0)
+    where
+        helper cur prev | cur == prev = cur
+                        | otherwise = let cur' = simplify cur in helper cur' cur
 
 optimize :: Stmt -> Stmt
 optimize Skip = Skip
 optimize (Colon s1 s2) = Colon (optimize s1) (optimize s2)
-optimize (Assign e1 e2) = Assign e1 ((simplify . simplify) e2)
+optimize (Assign e1 e2) = Assign e1 (totalSimplify e2)
 optimize (Read e) = Read e
-optimize (Write e) = Write ((simplify . simplify) e)
-optimize (WhileLoop e s) = WhileLoop ((simplify . simplify) e) (optimize s)
-optimize (IfCond e s1 s2) = IfCond ((simplify . simplify) e) (optimize s1) (optimize s2)
+optimize (Write e) = Write (totalSimplify e)
+optimize (WhileLoop e s) = WhileLoop (totalSimplify e) (optimize s)
+optimize (IfCond e s1 s2) = IfCond (totalSimplify e) (optimize s1) (optimize s2)
