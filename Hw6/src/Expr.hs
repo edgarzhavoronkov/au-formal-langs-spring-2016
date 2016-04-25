@@ -34,7 +34,7 @@ instance Show Stmt where
         where
             helper :: String -> Stmt -> String
             helper indent Skip = indent ++ "Skip" ++ "\n"
-            helper indent (Assign e1 e2) = indent ++ "Assign " ++ show e1 ++ show e2 ++ "\n"
+            helper indent (Assign e1 e2) = indent ++ "Assign " ++ show e1 ++ " " ++ show e2 ++ "\n"
             helper indent (Colon s1 s2) = indent ++ "Colon " ++ "\n" ++ helper ('\t':indent) s1 ++ helper ('\t':indent) s2 ++ "\n"
             helper indent (Write e) = indent ++ "Write " ++ show e ++ "\n"
             helper indent (Read e) = indent ++ "Read " ++ show e ++ "\n"
