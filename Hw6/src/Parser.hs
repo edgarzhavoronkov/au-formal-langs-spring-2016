@@ -190,7 +190,7 @@ pprint = helper ""
         helper indent (Read e) =
             putStr $ indent ++ "read " ++ pprint' e
         helper indent (WhileLoop e s) = do
-            putStrLn $ indent ++ "while " ++ pprint' e ++ "do"
+            putStrLn $ indent ++ "while " ++ pprint' e ++ " do"
             helper ('\t':indent) s
         helper indent (IfCond e s1 s2) = do
             putStrLn $ indent ++ "if " ++ pprint' e
