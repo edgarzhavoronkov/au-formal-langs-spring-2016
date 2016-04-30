@@ -23,7 +23,9 @@ languageDef =
                                           , "read"
                                           , "while"
                                           , "do"
+                                          , "od"
                                           , "if"
+                                          , "fi"
                                           , "then"
                                           , "else"
                                           ]
@@ -65,6 +67,7 @@ ifStmt = do
     reserved "else"
     spaces
     action2 <- statement
+    reserved "fi"
     return $ IfCond cond action1 action2
 
 whileStmt :: Parser Stmt
@@ -74,6 +77,8 @@ whileStmt = do
     spaces
     reserved "do"
     action <- statement
+    spaces
+    reserved "od"
     return $ WhileLoop cond action
 
 --fucked up assignment!
@@ -192,12 +197,14 @@ pprint = helper ""
         helper indent (WhileLoop e s) = do
             putStrLn $ indent ++ "while " ++ pprint' e ++ " do"
             helper ('\t':indent) s
+            putStr $ ('\n':indent) ++ "od"
         helper indent (IfCond e s1 s2) = do
             putStrLn $ indent ++ "if " ++ pprint' e
             putStrLn $ indent ++ "then"
             helper ('\t' : indent) s1
             putStrLn $ ('\n':indent) ++ "else"
             helper ('\t' : indent) s2
+            putStr $ ('\n':indent) ++ "fi"
 
 --TODO - normal evaluations
 simplify :: Expr -> Expr
@@ -238,10 +245,30 @@ simplify (BinOp Mul (Num x) (BinOp Mul ex (Num y))) = BinOp Mul (Num (x * y)) (s
 simplify (BinOp Mul (BinOp Mul (Num x) ex) (Num y)) = BinOp Mul (Num (x * y)) (simplify ex)
 simplify (BinOp Mul (BinOp Mul ex (Num x)) (Num y)) = BinOp Mul (Num (x * y)) (simplify ex)
 --distibutivity
-simplify (BinOp Mul (Num x) (BinOp Add e1 e2)) = BinOp Add (BinOp Mul (Num x) (simplify e1)) (BinOp Mul (Num x) (simplify e2))
+simplify (BinOp Mul (Num x) (BinOp Add e1 e2)) = simplify (BinOp Add simple1 simple2)
+    where
+        simple1 = simplify (BinOp Mul (Num x) (simplify e1))
+        simple2 = simplify (BinOp Mul (Num x) (simplify e2))
+
+--Logic or with true
+simplify (BinOp Or (Num x) e) | x /= 0 = Num x
+                              | otherwise = BinOp Or (Num x) (simplify e)
+simplify (BinOp Or e (Num x)) | x /= 0 = Num x
+                              | otherwise = BinOp Or (Num x) (simplify e)
+--Logic and with fasle
+simplify (BinOp And (Num x) e) | x == 0 = Num 0
+                               | otherwise = BinOp And (Num x) (simplify e)
+simplify (BinOp And e (Num x)) | x == 0 = Num 0
+                               | otherwise = BinOp And (Num x) (simplify e)
+--logic distributivity
+simplify (BinOp And e1 (BinOp Or e2 e3)) = simplify (BinOp Or simple1 simple2)
+    where
+        simple1 = simplify (BinOp And e1 e2)
+        simple2 = simplify (BinOp And e1 e3)
+
 --recursion launcher
 simplify (BinOp op e1 e2) = BinOp op (simplify e1) (simplify e2)
---
+
 totalSimplify :: Expr -> Expr
 totalSimplify expr = helper expr (Num 0)
     where
@@ -254,5 +281,11 @@ optimize (Colon s1 s2) = Colon (optimize s1) (optimize s2)
 optimize (Assign e1 e2) = Assign e1 (totalSimplify e2)
 optimize (Read e) = Read e
 optimize (Write e) = Write (totalSimplify e)
-optimize (WhileLoop e s) = WhileLoop (totalSimplify e) (optimize s)
-optimize (IfCond e s1 s2) = IfCond (totalSimplify e) (optimize s1) (optimize s2)
+optimize (WhileLoop e s) =
+    case totalSimplify e of
+        (Num 0) -> Skip
+        _ -> WhileLoop (totalSimplify e) (optimize s)
+optimize (IfCond e s1 s2) =
+    case totalSimplify e of
+        Num 0 -> optimize s2
+        _ -> optimize s1

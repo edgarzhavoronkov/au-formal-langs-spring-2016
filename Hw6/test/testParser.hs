@@ -9,7 +9,7 @@ testSimpleAssignmemnt = parseString "x := 1" == Assign (Var "x") (Num 1)
 testSmallProgram :: Bool
 testSmallProgram = parseString expr == ast
     where
-        expr = "read x; if y + 1 == x then write y else skip"
+        expr = "read x; if y + 1 == x then write y else skip fi"
         ast = Colon
                 (Read (Var "x"))
                 (IfCond
@@ -89,6 +89,37 @@ testComplexEval = expected == actual
         expr = "y := 30 + (x + (4 * 3))"
         expected = Assign (Var "y") (BinOp Add (Num 42) (Var "x"))
 
+--testing logic ops
+testLogicalOr :: Bool
+testLogicalOr = expected == actual
+    where
+        actual = optimize $ parseString expr
+        expr = "y := 1 || (4 / 0)"
+        expected = Assign (Var "y") (Num 1)
+
+testLogicalAnd :: Bool
+testLogicalAnd = expected == actual
+    where
+        actual = optimize $ parseString expr
+        expr = "y := 0 && (4 / 0)"
+        expected = Assign (Var "y") (Num 0)
+
+--remove while loop
+testRemoveWhileLoop :: Bool
+testRemoveWhileLoop = expected == actual
+    where
+        actual = optimize $ parseString expr
+        expr = "while (x + 3 * 4) && (3 + 5 - 2 - 6) do y := (2 / 0) od"
+        expected = Skip
+
+--remove if statement
+testRemoveIfStatement :: Bool
+testRemoveIfStatement = expected == actual
+    where
+        actual = optimize $ parseString expr
+        expr = "if (x + 3 * 4) || ((3 + 6) - (3 + 5)) then write x else write (1 / 0) fi"
+        expected = Write (Var "x")
+
 main :: IO ()
 main = do
     putStrLn $ "testSimpleAssignmemnt: " ++ show testSimpleAssignmemnt
@@ -104,3 +135,7 @@ main = do
     putStrLn $ "testModUnit: " ++ show testModUnit
     putStrLn $ "testEval: " ++ show testEval
     putStrLn $ "testComplexEval: " ++ show testComplexEval
+    putStrLn $ "testLogicalOr: " ++ show testLogicalOr
+    putStrLn $ "testLogicalAnd: " ++ show testLogicalAnd
+    putStrLn $ "testRemoveWhileLoop: " ++ show testRemoveWhileLoop
+    putStrLn $ "testRemoveIfStatement: " ++ show testRemoveIfStatement
